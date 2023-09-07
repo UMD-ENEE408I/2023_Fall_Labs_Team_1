@@ -6,23 +6,53 @@ const unsigned int M1_ENC_B = 38;
 const unsigned int M2_ENC_A = 37;
 const unsigned int M2_ENC_B = 36;
 
-const unsigned int M1_IN_1;
-const unsigned int M1_IN_2;
-const unsigned int M2_IN_1;
-const unsigned int M2_IN_2;
+const unsigned int M1_IN_1=13; //GPIO13 on Heltec board
+const unsigned int M1_IN_2=12; //GPIO12 on Heltec board
+const unsigned int M2_IN_1=25; //GPIO25 on Heltec board
+const unsigned int M2_IN_2=14; //GPIO14 on Heltec board
 
-const unsigned int M1_IN_1_CHANNEL = 8;
-const unsigned int M1_IN_2_CHANNEL = 9;
-const unsigned int M2_IN_1_CHANNEL = 10;
-const unsigned int M2_IN_2_CHANNEL = 11;
+const unsigned int M1_IN_1_CHANNEL=8;
+const unsigned int M1_IN_2_CHANNEL=9;
+const unsigned int M2_IN_1_CHANNEL=10;
+const unsigned int M2_IN_2_CHANNEL=11;
 
 const unsigned int M1_I_SENSE = 35;
 const unsigned int M2_I_SENSE = 34;
 
-const unsigned int PWM_VALUE = 512; // Max PWM given 8 bit resolution
+const unsigned int PWM_VALUE = 100; // Do not give max PWM. Robot will move fast
 
 const int freq = 5000;
-const int resolution = 10;
+const int resolution = 8;
+
+void M1_forward(){
+  ledcWrite(M1_IN_1_CHANNEL, 0);
+  ledcWrite(M1_IN_2_CHANNEL, PWM_VALUE);
+}
+
+void M2_forward(){
+  ledcWrite(M2_IN_1_CHANNEL, 0);
+  ledcWrite(M2_IN_2_CHANNEL, PWM_VALUE);
+}
+
+void M1_backward(){
+  ledcWrite(M1_IN_1_CHANNEL, PWM_VALUE);
+  ledcWrite(M1_IN_2_CHANNEL, 0);
+}
+
+void M2_backward(){
+  ledcWrite(M2_IN_1_CHANNEL, PWM_VALUE);
+  ledcWrite(M2_IN_2_CHANNEL, 0);
+}
+
+void M1_stop(){
+  ledcWrite(M1_IN_1_CHANNEL, PWM_VALUE);
+  ledcWrite(M1_IN_2_CHANNEL, PWM_VALUE);
+}
+
+void M2_stop(){
+  ledcWrite(M2_IN_1_CHANNEL, PWM_VALUE);
+  ledcWrite(M2_IN_2_CHANNEL, PWM_VALUE);
+}
 
 void setup() {
   // Stop the right motor by setting pin 14 low
@@ -57,5 +87,28 @@ void loop() {
   while(true) {
     long enc1_value = enc1.read();
     long enc2_value = enc2.read();
+    while(enc1.read() <= enc1_value+360 && enc2.read() >= enc2_value-360){
+      delay(5);
+      Serial.print(enc1_value); Serial.print("\t");
+      Serial.print(enc2_value); Serial.print("\n");
+      delay(5);
+      M1_forward();
+      M2_forward();
+    }
+    M1_stop();
+    M2_stop();
+    delay(5000);
+    while(enc1.read() >= enc1_value && enc2.read() <= enc2_value){
+      delay(5);
+      Serial.print(enc1_value); Serial.print("\t");
+      Serial.print(enc2_value); Serial.print("\n");
+      delay(5);
+      M1_backward();
+      M2_backward();
+    }
+    M1_stop();
+    M2_stop();
+    delay(5000);
+
   }
 }
