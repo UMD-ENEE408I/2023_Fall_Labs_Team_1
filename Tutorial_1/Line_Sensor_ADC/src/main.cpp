@@ -11,18 +11,46 @@ int adc1_buf[8];
 int adc2_buf[8];
 
 void readADC() {
+  int avg = 0;
   for (int i = 0; i < 8; i++) {
     adc1_buf[i] = adc1.readADC(i);
     adc2_buf[i] = adc2.readADC(i);
+    
 
     if (i<7) {
-      Serial.print(adc1_buf[i]); Serial.print("\t");
+      //Serial.print(adc1_buf[i]); Serial.print("\t");
+      avg = avg + adc1_buf[i];
+      if (adc1_buf[i]>600){
+        Serial.print("0\t");
+      }
+      else{
+        Serial.print("1\t");
+      }
     }
 
     if (i<6) {
-      Serial.print(adc2_buf[i]); Serial.print("\t");
+      //Serial.print(adc2_buf[i]); Serial.print("\t");
+      avg = avg + adc2_buf[i];
+      if (adc2_buf[i]>600){
+        Serial.print("0\t");
+      }
+      else{
+        Serial.print("1\t");
+      }
     }
+    
+
   }
+    avg = avg / 13;
+    //Serial.print("Average: ");
+    //Serial.print(avg);
+    //Serial.print("\t");
+    if (avg > 600) {
+      Serial.print("Overall Result: 0\t");
+    }
+    else{
+      Serial.print("Overall Result: 1\t");
+    }
 }
 
 void setup() {
@@ -48,6 +76,7 @@ void loop() {
 
   Serial.print("time: \t"); Serial.print(t_end - t_start); Serial.print("\t");
   Serial.println();
+  
 
   // delay(100);
 
