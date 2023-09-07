@@ -28,5 +28,7 @@ void loop() {
   while(true) {
     long enc1_value = enc1.read();
     long enc2_value = enc2.read();
+    Serial.print(enc1_value); Serial.print("\t");
+    Serial.print(enc2_value); Serial.print("\n");
   }
 }

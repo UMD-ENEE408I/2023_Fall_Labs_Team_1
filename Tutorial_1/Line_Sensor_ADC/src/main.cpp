@@ -46,11 +46,13 @@ void readADC() {
     //Serial.print(avg);
     //Serial.print("\t");
     if (avg > 600) {
-      Serial.print("Overall Result: 0\t");
+      Serial.print("Surface: 0\t");
     }
     else{
-      Serial.print("Overall Result: 1\t");
+      Serial.print("Surface: 1\t");
     }
+    
+
 }
 
 void setup() {
