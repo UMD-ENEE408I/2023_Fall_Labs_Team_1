@@ -12,12 +12,17 @@ int adc2_buf[8];
 
 void readADC() {
   int avg = 0;
+  double center = 0;
+  double center_sum = 0;
+  double center_count = 0;
+  double count = 0;
   for (int i = 0; i < 8; i++) {
     adc1_buf[i] = adc1.readADC(i);
     adc2_buf[i] = adc2.readADC(i);
     
 
     if (i<7) {
+      count = count + 1;
       //Serial.print(adc1_buf[i]); Serial.print("\t");
       avg = avg + adc1_buf[i];
       if (adc1_buf[i]>600){
@@ -25,10 +30,14 @@ void readADC() {
       }
       else{
         Serial.print("1\t");
+        center_sum = center_sum + count;
+        center_count = center_count + 1;
+
       }
     }
 
     if (i<6) {
+      count = count + 1;
       //Serial.print(adc2_buf[i]); Serial.print("\t");
       avg = avg + adc2_buf[i];
       if (adc2_buf[i]>600){
@@ -36,6 +45,8 @@ void readADC() {
       }
       else{
         Serial.print("1\t");
+        center_sum = center_sum + count;
+        center_count = center_count + 1;
       }
     }
     
@@ -51,6 +62,8 @@ void readADC() {
     else{
       Serial.print("Surface: 1\t");
     }
+    center = (center_sum/center_count)-1;
+    Serial.print("Center: "); Serial.print(center); Serial.print("\t");
     
 
 }
