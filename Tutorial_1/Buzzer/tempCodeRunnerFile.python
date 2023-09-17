@@ -1,0 +1,4 @@
+rows = input()
+for x in range (rows):
+    for y in range (rows):
+        print("* ")
