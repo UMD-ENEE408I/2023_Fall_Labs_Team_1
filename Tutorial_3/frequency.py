@@ -1,3 +1,8 @@
+# ENEE408I - Tutorial 2 - Part C
+#
+# Author: Daniel McLawhorn, c. 09-23-23
+# Adapted: Kent Chesley, 09-24-23
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -28,12 +33,19 @@ plt.ylabel("Amplitude")
 plt.title("FFT of cafe sounds")
 plt.show()
 
+# From playing the audio file, we can easily identify that there is high-frequency noise. From the FFT, we see that
+# this noise has a lower bound of around 1400 Hz. 
+
 ny = sample_rate/2
-cutoff = 700
+cutoff = 1190
 norm_cutoff = cutoff/ny
 
-b, a = sps.butter(6, norm_cutoff, 'low', False)
+b, a = sps.butter(15, norm_cutoff, 'low', False)
 data_filtered = sps.filtfilt(b,a,data.astype(float))
+
+# Desierable values for the cutoff and the filter order (the first argument to sps.butter) were determined by trial
+# and error with the goal of totally eliminating the audible presence of the high-frequency tone in the output file
+# while trying to maintaining audible quality of the voices.
 
 yf_filtered = fft(data_filtered)
 
