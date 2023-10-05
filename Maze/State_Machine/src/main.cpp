@@ -1,13 +1,19 @@
 #include <Arduino.h>
 #include <Adafruit_MCP3008.h>
+#include <Adafruit_MPU6050.h>
 
 #include <Encoder.h>
 
+#include <Adafruit_Sensor.h>
+#include <chrono>  // For using now() function.
+
+
 // *******IMPORTANT********
-int robot = 1;  // SET THIS.
+int robot = 2;  // SET THIS.
 // *******IMPORTANT********
 
 int state = 1;  // Stage of the course, 1, 2, 3, or 4. Global so it isn't reset when loop() restarts.
+Adafruit_MPU6050 mpu;
 
 Adafruit_MCP3008 adc1;
 Adafruit_MCP3008 adc2;
@@ -38,6 +44,8 @@ const unsigned int M2_IN_2_CHANNEL=11;
 const unsigned int M1_I_SENSE = 35;
 const unsigned int M2_I_SENSE = 34;
 
+const float M_I_COUNTS_TO_A = (3.3 / 1024.0) / 0.120;
+
 int black_thres = 600;  // Initialize line sensor white threshold. Setup loop sets for a specific robot.
 unsigned int base_pwm = 350; // Initialize base PWM value. Setup loop sets for a specific robot.
 
@@ -53,7 +61,7 @@ float last_error = 0;
 float total_error = 0;
 
 int K_p_lf = 25;
-int K_d_lf = 1500;
+int K_d_lf = 1700;
 int K_i_lf = 0;
 
 void readADC(int color[13]) {
@@ -181,7 +189,7 @@ float position(){
     if (i<7) {
       //Serial.print(adc1_buf[i]); Serial.print("\t");    
       avg = avg + adc1_buf[i];
-      if (adc1_buf[i]>675){
+      if (adc1_buf[i]>black_thres){
         ir_led[2*i] = 0;
         // Serial.print("0\t");
       }
@@ -198,7 +206,7 @@ float position(){
     if (i<6) { //Even sensors
       //Serial.print(adc2_buf[i]); Serial.print("\t");
       avg = avg + adc2_buf[i];
-      if (adc2_buf[i]>675){
+      if (adc2_buf[i]>black_thres){
         ir_led[2*i+1] = 0;
         // Serial.print("0\t");
       }
@@ -265,9 +273,90 @@ void setup() {
   delay(100);
 
   Serial.begin(115200);
+  while (!Serial)
+    delay(10); // will pause Zero, Leonardo, etc until serial console opens
+
+  Serial.println("Adafruit MPU6050 test!");
+
+  pinMode(ADC_1_CS, OUTPUT);
+  pinMode(ADC_2_CS, OUTPUT);
+
+  digitalWrite(ADC_1_CS, HIGH); // Without this the ADC's write
+  digitalWrite(ADC_2_CS, HIGH); // to the SPI bus while the nRF24 is!!!!
 
   adc1.begin(ADC_1_CS);  
   adc2.begin(ADC_2_CS);
+
+  // Try to initialize!
+  if (!mpu.begin()) {
+    Serial.println("Failed to find MPU6050 chip");
+    while (1) {
+      delay(10);
+    }
+  }
+  Serial.println("MPU6050 Found!");
+
+  mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
+  Serial.print("Accelerometer range set to: ");
+  switch (mpu.getAccelerometerRange()) {
+  case MPU6050_RANGE_2_G:
+    Serial.println("+-2G");
+    break;
+  case MPU6050_RANGE_4_G:
+    Serial.println("+-4G");
+    break;
+  case MPU6050_RANGE_8_G:
+    Serial.println("+-8G");
+    break;
+  case MPU6050_RANGE_16_G:
+    Serial.println("+-16G");
+    break;
+  }
+  mpu.setGyroRange(MPU6050_RANGE_500_DEG);
+  Serial.print("Gyro range set to: ");
+  switch (mpu.getGyroRange()) {
+  case MPU6050_RANGE_250_DEG:
+    Serial.println("+- 250 deg/s");
+    break;
+  case MPU6050_RANGE_500_DEG:
+    Serial.println("+- 500 deg/s");
+    break;
+  case MPU6050_RANGE_1000_DEG:
+    Serial.println("+- 1000 deg/s");
+    break;
+  case MPU6050_RANGE_2000_DEG:
+    Serial.println("+- 2000 deg/s");
+    break;
+  }
+
+  mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
+  Serial.print("Filter bandwidth set to: ");
+  switch (mpu.getFilterBandwidth()) {
+  case MPU6050_BAND_260_HZ:
+    Serial.println("260 Hz");
+    break;
+  case MPU6050_BAND_184_HZ:
+    Serial.println("184 Hz");
+    break;
+  case MPU6050_BAND_94_HZ:
+    Serial.println("94 Hz");
+    break;
+  case MPU6050_BAND_44_HZ:
+    Serial.println("44 Hz");
+    break;
+  case MPU6050_BAND_21_HZ:
+    Serial.println("21 Hz");
+    break;
+  case MPU6050_BAND_10_HZ:
+    Serial.println("10 Hz");
+    break;
+  case MPU6050_BAND_5_HZ:
+    Serial.println("5 Hz");
+    break;
+  }
+
+  Serial.println("");
+  delay(100);
 
   ledcSetup(M1_IN_1_CHANNEL, freq, resolution);
   ledcSetup(M1_IN_2_CHANNEL, freq, resolution);
@@ -297,7 +386,18 @@ void setup() {
 
 }
 
+// Initializations.
+double integral = 0;  // Used to integrate (Riemann sum) the angular velocity.
+double sample = 0;
+auto last_time = std::chrono::high_resolution_clock::now(); // For reference, see Sumsuddin Shojib' answer here: 
+// https://stackoverflow.com/questions/728068/how-to-calculate-a-time-difference-in-c
+double elapsed_time_ms = 0;
+
 void loop(){
+
+  /* Get new sensor events with the readings */
+  sensors_event_t a, g, temp;
+  mpu.getEvent(&a, &g, &temp);
 
   int color[13] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}; 
   // color[i] represents the color for sensor i + 1. White = 1; black = 0;
@@ -338,6 +438,25 @@ void loop(){
         if (num_white > 3){ // Reached right angle in line.
           // Turn 90 deg towards the direction with more white. Not yet implemented.
           // Reset PID controller signals.
+
+          //Rotate 90 deg.
+          M1_forward(base_pwm);
+          M2_backward(base_pwm);
+          last_time = std::chrono::high_resolution_clock::now();  // Time in ms.
+          integral = 0;
+          do
+          {
+            // "Integrate" the angular velocity to get angular change.
+            delay(10);
+            mpu.getEvent(&a, &g, &temp);  // Update measurment.
+            sample = g.gyro.z;
+            elapsed_time_ms = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - last_time).count();
+            // For reference, see Sumsuddin Shojib' answer here: 
+            // https://stackoverflow.com/questions/728068/how-to-calculate-a-time-difference-in-c
+            last_time = std::chrono::high_resolution_clock::now();
+            integral = integral + sample*elapsed_time_ms/1000;
+          } while (abs(integral) < 3.1416/2);
+
         }
         follow_line();
       } 
