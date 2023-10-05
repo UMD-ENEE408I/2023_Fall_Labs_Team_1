@@ -3,7 +3,9 @@
 
 #include <Encoder.h>
 
+// *******IMPORTANT********
 int robot = 1;  // SET THIS.
+// *******IMPORTANT********
 
 int state = 1;  // Stage of the course, 1, 2, 3, or 4. Global so it isn't reset when loop() restarts.
 
@@ -36,7 +38,8 @@ const unsigned int M2_IN_2_CHANNEL=11;
 const unsigned int M1_I_SENSE = 35;
 const unsigned int M2_I_SENSE = 34;
 
-const unsigned int base_pwm = 350; // Do not give max PWM. Robot will move fast. Robot 1: 400, robot 2: 300.
+int black_thres = 600;  // Initialize line sensor white threshold. Setup loop sets for a specific robot.
+unsigned int base_pwm = 350; // Initialize base PWM value. Setup loop sets for a specific robot.
 
 const int freq = 5000;
 const int resolution = 10;
@@ -59,18 +62,6 @@ void readADC(int color[13]) {
   double center_sum = 0;
   double center_count = 0;
   double count = 0;
-  
-  //white < black.
-  int black_thres = 600;  // Initialize line sensor white threshold. Following if statement sets for a specific robot.
-
-  if (robot == 1){ 
-    black_thres = 600;
-  }
-  else {
-    if (robot == 2){ 
-      black_thres = 675;
-    }
-  }
 
   for (int i = 0; i < 8; i++) {
     adc1_buf[i] = adc1.readADC(i);  // Odd sensors. Starting at lower sensor number.
@@ -291,6 +282,19 @@ void setup() {
   pinMode(M1_I_SENSE, INPUT);
   pinMode(M2_I_SENSE, INPUT);
 
+  //white < black.
+
+  if (robot == 1){ 
+    black_thres = 600;
+    base_pwm = 350; // Do not give max PWM. Robot will move fast.
+  }
+  else {
+    if (robot == 2){ 
+      black_thres = 675;
+      base_pwm = 300; // Do not give max PWM. Robot will move fast.
+    }
+  }
+
 }
 
 void loop(){
@@ -333,6 +337,7 @@ void loop(){
       else{
         if (num_white > 3){ // Reached right angle in line.
           // Turn 90 deg towards the direction with more white. Not yet implemented.
+          // Reset PID controller signals.
         }
         follow_line();
       } 
