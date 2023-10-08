@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <Adafruit_MCP3008.h>
+#include <Adafruit_MPU6050.h>
 
 #include <Encoder.h>
 
@@ -8,10 +9,11 @@
 #include <chrono>  // For using now() function.
 
 // *******IMPORTANT********
-int robot = 1;  // SET THIS.
+int robot = 2;  // SET THIS.
 // *******IMPORTANT********
 
 int state = 1;  // Stage of the course, 1, 2, 3, or 4. Global so it isn't reset when loop() restarts.
+Adafruit_MPU6050 mpu;
 
 Adafruit_MCP3008 adc1;
 Adafruit_MCP3008 adc2;
@@ -65,7 +67,7 @@ float last_error = 0;
 float total_error = 0;
 
 int K_p_lf = 25;
-int K_d_lf = 1500;
+int K_d_lf = 1700;
 int K_i_lf = 0;
 
 // IMU variables initialization:
@@ -388,6 +390,16 @@ void setup() {
   delay(100);
 
   Serial.begin(115200);
+  while (!Serial)
+    delay(10); // will pause Zero, Leonardo, etc until serial console opens
+
+  Serial.println("Adafruit MPU6050 test!");
+
+  pinMode(ADC_1_CS, OUTPUT);
+  pinMode(ADC_2_CS, OUTPUT);
+
+  digitalWrite(ADC_1_CS, HIGH); // Without this the ADC's write
+  digitalWrite(ADC_2_CS, HIGH); // to the SPI bus while the nRF24 is!!!!
 
   adc1.begin(ADC_1_CS);  
   adc2.begin(ADC_2_CS);
@@ -495,7 +507,18 @@ void setup() {
 
 }
 
+// Initializations.
+double integral = 0;  // Used to integrate (Riemann sum) the angular velocity.
+double sample = 0;
+auto last_time = std::chrono::high_resolution_clock::now(); // For reference, see Sumsuddin Shojib' answer here: 
+// https://stackoverflow.com/questions/728068/how-to-calculate-a-time-difference-in-c
+double elapsed_time_ms = 0;
+
 void loop(){
+
+  /* Get new sensor events with the readings */
+  sensors_event_t a, g, temp;
+  mpu.getEvent(&a, &g, &temp);
 
   int color[13] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}; 
   // color[i] represents the color for sensor i + 1. White = 1; black = 0;
