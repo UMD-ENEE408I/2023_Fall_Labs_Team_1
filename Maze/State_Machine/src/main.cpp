@@ -72,9 +72,12 @@ int K_i_lf = 0;
 double imu_integral = 0;  // Used to integrate (Riemann sum) the angular velocity.
 double sample = 0;
 auto last_time = std::chrono::high_resolution_clock::now();
-double elapsed_time_ms = 0;
+double elapsed_time_ms = 0; // Used for delaying before turn as well.
 
-void readADC(int color[13]) {
+// Time variables for delaying before turn.
+auto init_time = std::chrono::high_resolution_clock::now();
+
+void readADCarray(int color[13]) {
   int avg = 0;
   double center = 0;
   double center_sum = 0;
@@ -88,6 +91,7 @@ void readADC(int color[13]) {
 
     if (i<7) {  // Handle odd sensors.
       if (adc1_buf[i]>black_thres) color[2*i] = 0; // Black.
+      else color[2*i] = 1;  // White.
       //else if (adc1_buf[i]>white_thres) color[2*i] = 1; // White.
       // Else yellow as initialized.
       //color[2*i] = adc1_buf[i];
@@ -96,6 +100,7 @@ void readADC(int color[13]) {
 
     if (i<6) {  // Handle even sensors.
       if (adc2_buf[i]>black_thres) color[2*i + 1] = 0; // Black.
+      else color[2*i + 1] = 1;  // White.
       //else if (adc1_buf[i]>white_thres) color[2*i + 1] = 1; // White.
       // Else yellow as initialized.
       //color[2*i + 1] = adc2_buf[i];
@@ -127,10 +132,10 @@ int count_white(int color[13]) {
 
 void increment_state(int color[13]) {
   int num_white = 0;
-  readADC(color);
+  readADCarray(color);
   num_white = count_white(color);
   while (num_white > 9){ 
-  readADC(color);
+  readADCarray(color);
   num_white = count_white(color);
   // LINE FOLLOW.
   }
@@ -264,9 +269,11 @@ void follow_line(){
   int left_motor_pwm = base_pwm-pid_v;
   int right_motor_pwm = base_pwm+pid_v;
 
+  /*
   Serial.print(left_motor_pwm);
   Serial.print('\t');
   Serial.println(right_motor_pwm);
+  */
 
   M1_forward(left_motor_pwm);
   M2_forward(right_motor_pwm);
@@ -303,7 +310,7 @@ void turn(int dir) {
       // https://stackoverflow.com/questions/728068/how-to-calculate-a-time-difference-in-c
       last_time = std::chrono::high_resolution_clock::now();
       imu_integral = imu_integral + sample*elapsed_time_ms/1000;
-    } while (abs(imu_integral) < (3.1416/2 - 3.1416/10)); // Offset of pi/10 because the robot's rotational momentum
+    } while (abs(imu_integral) < (3.1416/2 - 3.1416/5)); // Offset of pi/10 because the robot's rotational momentum
     // causes it to overshoot slightly which will make up the difference.
     
     // Bring both motors to full and complete stop so that they don't have any non-zero inertia that keeps the robot 
@@ -484,7 +491,7 @@ void setup() {
 
   if (robot == 1){ 
     black_thres = 600;
-    base_pwm = 350; // Do not give max PWM. Robot will move fast.
+    base_pwm = 325; // Do not give max PWM. Robot will move fast.
   }
   else {
     if (robot == 2){ 
@@ -501,7 +508,7 @@ void loop(){
   // color[i] represents the color for sensor i + 1. White = 1; black = 0;
 
   int t_start = micros();
-  readADC(color);
+  readADCarray(color);
   int t_end = micros();
 
   int num_white = 0;
@@ -526,9 +533,9 @@ void loop(){
   switch(state) {
     case 1:
     
-      if (num_white > 9){ // Reached end of segment.
-        while (num_white > 9){ 
-        readADC(color);
+      if (num_white > 11){ // Reached end of segment.
+        while (num_white > 11){ 
+        readADCarray(color);
         num_white = count_white(color);
         follow_line();
         }
@@ -540,8 +547,17 @@ void loop(){
           // Drive foward briefly so that the robot is centered over the line after the turn.
           M1_forward(base_pwm);
           M2_forward(base_pwm);
-          delay(150); // Needs to be updated to use the encoder instead to drive for a certain distance rather than 
-          // a certain amount of time.
+          init_time = std::chrono::high_resolution_clock::now();  // Time in ms.
+          do  
+          {
+            // In theory this would be better to do with encoder, but for some reason initializing the encoder with
+            // "Encoder enc1(M1_ENC_A, M1_ENC_B);" was creating jerky and poor behavior.
+            readADCarray(color);
+            num_white = count_white(color);
+            if (num_white > 11) break; // This turns out to be the endzone, not a right angle.
+
+            elapsed_time_ms = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - init_time).count();
+          } while (elapsed_time_ms < 150);  // elapsed_time_ms < 150
           
           // It may be that when it entered the if statement, the robot has reached the end of the stage, but 
           // hasn't gotten far enough into the 
@@ -550,8 +566,7 @@ void loop(){
           // the case; instead these two lines are currently being run AFTER it has driven forward briefly.) Once
           // "delay(150)" above is replaced with a loop that checks the encoder, these two lines of code can simply 
           // be inserted into the loop (with adaptations made as necessary).                  
-          num_white = count_white(color);
-          if(num_white > 9) break;
+          if(num_white > 9) break;   // This turns out to be the endzone, not a right angle.
           
           pos = position();
           if (pos < 6) turn(1);  // Turn right.
@@ -583,7 +598,7 @@ void loop(){
       break;
   }
 
-      Serial.print(state); Serial.println();
+      Serial.print("\t"); Serial.print(state); Serial.println();
 
 
 
