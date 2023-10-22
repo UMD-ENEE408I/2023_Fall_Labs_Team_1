@@ -1,0 +1,1 @@
+The "test" directory was obtained from https://github.com/pupil-labs/apriltags/tree/main/test.
