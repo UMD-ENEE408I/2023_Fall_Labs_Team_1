@@ -65,7 +65,7 @@ of login credentials, but instead each member of UMD has their own credentials. 
 board.
 
 Once the program is uploaded, open the Serial Monitor. You should see the IP address for the microcontroller. (If you don't see it, try presseing the `RST` button on the
-microcontroller.) Using a web browser, go to `http://<IP address>` and use the links there to remotely turn the right motor on the robot on or off.
+microcontroller.) Using a web browser on any machine connected to the WiFi netwrork (including Nvidia), go to `http://<IP address>` and use the links there to remotely turn the right motor on the robot on or off.
 
 ## References
 
