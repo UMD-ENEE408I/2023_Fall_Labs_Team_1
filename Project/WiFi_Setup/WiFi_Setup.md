@@ -42,7 +42,7 @@ Of the three methods described, only installing the framework "Via Arduino Board
 
 It is necessary to slect the correct
 board. Do this in the Arduino coding environment by selecting `Tools` > `Board` > `Heltec ESP32 Arduino` > `WiFi Kit 32`. (Some of the other options in the final submenu may
-also work, `WiFi LoRa 32(V2)` for example.
+also work, `WiFi LoRa 32(V2)` for example.)
 
 In selecting an example, the `File` > `Examples` > `Heltec-Example` menu was not present. As an alternative, `File` > `Examples` > `WiFi` > `WiFi Scan` was used.
 
