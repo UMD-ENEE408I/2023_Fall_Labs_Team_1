@@ -8,7 +8,7 @@ Relavent manufacturer home pages:
 
 WiFi Kit 32 uses the ESP32 development environment.
 
-WiFi Kit 32 uses a 2.4 Ghz antenna [1].
+WiFi Kit 32 uses a 2.4 GHz antenna [1].
 
 As of the initial time this page was written, these instructions had only been tested on a x64 Windows 10 machine.
 
