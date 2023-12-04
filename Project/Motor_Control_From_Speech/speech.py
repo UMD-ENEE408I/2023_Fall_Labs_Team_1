@@ -22,4 +22,9 @@ def rec(state):
     else:
         print("[No change]")
     
+    if(text.find('stop')) != -1:
+        print("3")
+        state = 3
+    
+    
     return state
