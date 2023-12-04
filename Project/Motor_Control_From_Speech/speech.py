@@ -21,4 +21,9 @@ def rec(state):
         print("2")
         state = 2
     
+    if(text.find('stop')) != -1:
+        print("3")
+        state = 3
+    
+    
     return state
