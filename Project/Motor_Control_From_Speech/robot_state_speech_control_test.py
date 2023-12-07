@@ -13,8 +13,9 @@ import bandpass
 import findCone
 import cv2 
 import img_dir
+import numpy as np
 
-base_pwm = 300
+base_pwm = 320
 lPWM = base_pwm # Just for testing.
 rPWM = base_pwm # Just for testing.
 
@@ -25,6 +26,9 @@ sock.connect((host, port))
 print("Connected!")
 state = 0
 webcam = cv2.VideoCapture(1)
+rState = -1
+oldrState = -1
+not_seen_dir = 1
 while True:
     microphone.record()
     bandpass.filter('left.wav', 'right.wav')
@@ -35,24 +39,48 @@ while True:
         while(time.time()-time1 < 10):
             print("started camera task")
             total = []
-            for x in range(10):
+            dirs = []
+            total_slim = []
+            not_seen = 0
+            for x in range(11):
                 check, frame = webcam.read()
                 col = findCone.find(frame)
+                if(col >-1):
+                    frame[:,col,:]=np.array([0,0,255])
+                cv2.imshow("Capturing", frame)
                 total.append(col)
+                dirs.append(img_dir.dir(col))
+                if(img_dir.dir(col) == 0):
+                    not_seen = not_seen + 1
+                else:
+                    total_slim.append(col)
             total.sort()
-            mid = len(total) // 2
-            med = (total[mid] + total[~mid]) / 2
-            print(med)
-            t = 100
-            if img_dir.dir(med) == 0:
+            print(total)
+            oldrState = rState
+            if(not_seen > 5):
+                rState = not_seen_dir
                 print("No object found")
-                rState = -1 
+
+            #elif img_dir.dir(med) == 0:
+            #    print("No object found")
+            #    rState = -1 
             else:
+                not_seen_dir = -1*not_seen_dir
+                mid = len(total_slim) // 2
+                med = (total_slim[mid] + total_slim[~mid]) / 2
+                print(med)
                 rState = img_dir.dir(med)
+            #if(oldrState != rState):
+            #    if(oldrState == 2 and not_seen>5):
+            #        rState = 2
+            #    elif(oldrState == 2 and rState == 1):
+            #        rState = 2
             rState = str(rState)
-            message = str(rState) + " " + str(lPWM) + " " + str(rPWM) + " " + str(t)  
+            message = str(rState) + " " + str(lPWM) + " " + str(rPWM) 
             print("rState: ",rState)
             print("State: ",state)
+            print("Left PWM: ",lPWM)
+            print("Right PWM: ",rPWM)
             sock.send(message.encode())
 
             #time.sleep(2)

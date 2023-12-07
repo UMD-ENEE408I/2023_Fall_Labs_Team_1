@@ -36,7 +36,8 @@ import cv2
 import numpy as np
 
 def find(img):
-
+    presentThres = 2000
+    imminentThres = 10000000
     # Reference: https://www.geeksforgeeks.org/color-identification-in-images-using-python-opencv/.
     
     # Convert Image to Image HSV 
@@ -44,7 +45,7 @@ def find(img):
     
     # Defining lower and upper bound HSV values to detect orange (cone color). Ranges determined by trial and 
     # error. Reference: https://docs.opencv.org/3.4/da/d97/tutorial_threshold_inRange.html
-    lower = np.array([0, 50, 175]) 
+    lower = np.array([0, 100, 175]) 
     upper = np.array([30, 255, 255]) 
     #lower = np.array([0, 100, 100]) 
     #upper = np.array([50, 255, 255]) 
@@ -57,23 +58,25 @@ def find(img):
     cv2.waitKey(1)
 
 
-    col_sums = np.sum(mask, axis=0)  # Sum columns of mask. Columns containing cone should have high sum.   
+    
     # References: 
     # https://stackoverflow.com/questions/13567345/how-to-calculate-the-sum-of-all-columns-of-a-2d-numpy-array-efficiently,
     # https://numpy.org/doc/stable/reference/generated/numpy.sum.html.
 
-    thres = 2000
-
-    if np.max(col_sums) > thres:
-        # print(np.max(col_sums), end="     ")  # Prints maximum column. Reference: https://stackoverflow.com/questions/5598181/how-can-i-print-multiple-things-on-the-same-line-one-at-a-time.
-        return np.argmax(col_sums)  # Between 0 and 639. Indicates horizontal position of cone.
+    if np.sum(mask)>imminentThres:
+        return -2
     else:
-        return -1
-    # Reference: https://realpython.com/numpy-max-maximum/.
-    
+        col_sums = np.sum(mask, axis=0)  # Sum columns of mask. Columns containing cone should have high sum.   
+        if np.max(col_sums) > presentThres:
+            # print(np.max(col_sums), end="     ")  # Prints maximum column. Reference: https://stackoverflow.com/questions/5598181/how-can-i-print-multiple-things-on-the-same-line-one-at-a-time.
+            return np.argmax(col_sums)  # Between 0 and 639. Indicates horizontal position of cone.
+        else:
+            return -1
+        # Reference: https://realpython.com/numpy-max-maximum/.
+        
         
 
-
+#def disp(mask)
 
 
 
