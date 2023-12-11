@@ -25,6 +25,10 @@ robot states are as follows:
 #include <string>
 #include <sstream>
 
+const unsigned int BUZZ = 26; // Check schematic and see pin connection to buzzer
+const unsigned int BUZZ_CHANNEL = 2; //Selecting PWM channel 0
+const unsigned int octave = 5;
+
 const unsigned int M1_ENC_A = 39;
 const unsigned int M1_ENC_B = 38;
 const unsigned int M2_ENC_A = 37;
@@ -93,8 +97,8 @@ void M2_stop(){
 
 
 
-const char* ssid = "[SSID]";
-const char* password = "[PASSWORD]";
+const char* ssid = "D's iPhone";
+const char* password = "cobg7qzqn8yrv";
 
 const uint ServerPort = 80;
 
@@ -190,6 +194,8 @@ void setup() {
   ledcAttachPin(M2_IN_1, M2_IN_1_CHANNEL);
   ledcAttachPin(M2_IN_2, M2_IN_2_CHANNEL);
 
+  ledcAttachPin(BUZZ, BUZZ_CHANNEL);
+
   pinMode(M1_I_SENSE, INPUT);
   pinMode(M2_I_SENSE, INPUT);
 
@@ -226,10 +232,15 @@ void loop() {
       }
 
       // Serial.println(command.c_str());  // Reference: https://techoverflow.net/2022/09/07/how-to-serial-println-a-stdstring/.
+      //strTo4Int(command, commands);
       strTo3Int(command, commands);
       int rState = commands[0];
       int lPWM = commands[1];
       int rPWM = commands[2];
+      if(rPWM>=1000){
+        rPWM = rPWM/10;
+      }
+      //int time = commands[3];
       // Serial.print("\n");
       Serial.print(rState); Serial.print(", "); Serial.print(lPWM); Serial.print(", "); Serial.println(rPWM);
       // Serial.print("\n");
@@ -239,22 +250,42 @@ void loop() {
       {
       case -1:  // Turn left.
         M1_backward(lPWM);
-        M2_forward(rPWM);
+        M2_forward(rPWM);/*
+        delay(time);
+        M1_stop();
+        M2_stop();
+        delay(1000);*/
+        //ledcWriteTone(BUZZ_CHANNEL, 0);
         break;
 
       case 1: // Turn right.
         M1_forward(lPWM);
-        M2_backward(rPWM);
+        M2_backward(rPWM);/*
+        delay(time);
+        M1_stop();
+        M2_stop();
+        delay(3000);*/
+        //ledcWriteTone(BUZZ_CHANNEL, 0);
         break;
 
       case -2:  // Drive backwards.
         M1_backward(lPWM);
-        M2_backward(rPWM);
+        M2_backward(rPWM);/*
+        delay(time);
+        M1_stop();
+        M2_stop();
+        delay(3000);*/
+        //ledcWriteTone(BUZZ_CHANNEL, 0);
         break;
 
       case 2: // Drive forwards.
         M1_forward(lPWM);
-        M2_forward(rPWM);
+        M2_forward(rPWM);/*
+        delay(time);
+        M1_stop();
+        M2_stop();
+        delay(3000);*/
+        //ledcWriteNote(BUZZ_CHANNEL, NOTE_C, octave);
         break;
       
       default:  // Stall. State 0 used.
