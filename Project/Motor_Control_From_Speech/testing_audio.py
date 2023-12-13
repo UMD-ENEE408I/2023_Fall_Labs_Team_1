@@ -1,0 +1,2 @@
+import microphone
+microphone.record()
