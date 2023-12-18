@@ -14,7 +14,7 @@ def filter(left_file, right_file):
     times = np.arange(len(data))/sample_rate
 
     # Apply a 10-50 Hz bandpass filter to the original data
-    filtered = bandpass(data, [6500, 8500], sample_rate)
+    filtered = bandpass(data, [8500, 9500], sample_rate)
     filtered = np.asarray(filtered, dtype=np.int16)
     filtered_wav = scipy.io.wavfile.write('filteredl.wav', sample_rate, filtered)
 
@@ -23,6 +23,6 @@ def filter(left_file, right_file):
     times = np.arange(len(data))/sample_rate
 
     # Apply a 10-50 Hz bandpass filter to the original data
-    filtered = bandpass(data, [6500, 8500], sample_rate)
+    filtered = bandpass(data, [8500, 9500], sample_rate)
     filtered = np.asarray(filtered, dtype=np.int16)
     filtered_wav = scipy.io.wavfile.write('filteredr.wav', sample_rate, filtered)
