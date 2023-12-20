@@ -7,8 +7,9 @@ import scipy.signal as sps
 import math
 
 def sound_dir():
-    samplerate1, data1 = wavfile.read('left.wav')
+    samplerate1, data1 = wavfile.read('filteredl.wav')
     data1 = np.int64(data1)
+    m1 = np.max(data1)
     sq1 = np.square(data1)
     sum1 = np.sum(sq1)
     rms1 = np.sqrt(np.divide(sum1,len(data1)))
@@ -16,14 +17,16 @@ def sound_dir():
     rms1 = np.sum(rms1)
     print("Left: ", rms1)
 
-    samplerate2, data2 = wavfile.read('right.wav')
+    samplerate2, data2 = wavfile.read('filteredr.wav')
     data2 = np.int64(data2)
+    m2 = np.max(data2)
     sq2 = np.square(data2)
     sum2 = np.sum(sq2)
     rms2 = np.sqrt(np.divide(sum2,len(data2)))
     rms2 = np.divide(rms2,1)
     rms2 = np.sum(rms2)
-    rms2 = np.multiply(rms2,1.5)
+    rms2 = np.multiply(rms2,1.5) #For Kent's microphone
+    #rms2 = np.multiply(rms2,1.1) #For unlabeled microphone
     print("Right: ", rms2)
 
 
@@ -44,11 +47,11 @@ def sound_dir():
     #time_delay = sample_delay/8000
     #print("Time delay: " + str(time_delay) + "seconds")
     
-    if(rms1 < 15 and rms2 < 15):
+    if(rms1 < 25 and rms2 < 25):
         return 0
-    elif(rms1>1.6*rms2):
+    elif(rms1>1.3*rms2):
         return -1
-    elif(rms2>1.6*rms1):
+    elif(rms2>1.3*rms1):
         return 1
     else:
         return 2

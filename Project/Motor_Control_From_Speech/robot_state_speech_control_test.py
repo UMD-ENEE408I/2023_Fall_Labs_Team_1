@@ -43,7 +43,7 @@ while True:
         lPWM = 400
         rPWM = 400
         time1 = time.time()
-        while(time.time()-time1 < 100):
+        while(time.time()-time1 < 5):
             print("started camera task")
             total = []
             dirs = []
@@ -133,9 +133,10 @@ while True:
         print("rState: ",rState)
         print("State: ",state)
         sock.send(message.encode())
-        
+        #time.sleep(1)
         
         rState = 0
+        rState = str(rState)
         message = str(rState) + " " + str(lPWM) + " " + str(rPWM)
         print("rState: ",rState)
         print("State: ",state)
@@ -143,7 +144,7 @@ while True:
         time.sleep(1)
         
         
-        
+    
     else:
         rState = 0
         rState = str(rState)
